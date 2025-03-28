@@ -15,16 +15,18 @@ const buttonAddNote = document.getElementById("buttonAddNote")
 const container_number_notes = document.getElementById("container_number_notes")
 const charCount_1 = document.getElementById("charCount_1")
 const charCount_2 = document.getElementById("charCount_2")
+const staticBackdrop = new bootstrap.Modal(document.getElementById('staticBackdrop'));
+
 
 modalInputName.addEventListener("input", () => {
-  const maxLength = modalInputName.getAttribute("maxlength"); 
+  const maxLength = modalInputName.getAttribute("maxlength");
   const currentLength = modalInputName.value.length;
   charCount_1.textContent = `Введено: ${currentLength} / ${maxLength}`;
 });
 
 modalInputTopic.addEventListener("input", () => {
   const maxLength = modalInputTopic.getAttribute("maxlength");
-  const currentLength = modalInputTopic.value.length; 
+  const currentLength = modalInputTopic.value.length;
   charCount_2.textContent = `Введено: ${currentLength} / ${maxLength}`;
 });
 
@@ -73,6 +75,7 @@ buttonAddNote.addEventListener("click", () => {
     container_number_notes.insertAdjacentHTML('beforeend', `
       <p id="number_notes" class="number_notes">Кількість нотатків (${ul.children.length})</p>
     `);
+
   }
 
   // **Переинициализация Bootstrap tooltip для новых элементов**
@@ -82,6 +85,7 @@ buttonAddNote.addEventListener("click", () => {
   });
   modalInputName.value = '';
   modalInputTopic.value = '';
+  staticBackdrop.hide();
 });
 
 ul.addEventListener("click", (event) => {
