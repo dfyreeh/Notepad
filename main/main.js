@@ -5,18 +5,20 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-const bloc_notes = document.getElementById("bloc_notes")
-const ul = document.getElementById("bloc1_ul")
-const modalInputName = document.getElementById("modalInputName")
-const modalInputTopic = document.getElementById("modalInputTopic")
-
-
-const buttonAddNote = document.getElementById("buttonAddNote")
-const container_number_notes = document.getElementById("container_number_notes")
-const charCount_1 = document.getElementById("charCount_1")
-const charCount_2 = document.getElementById("charCount_2")
+const bloc_notes = document.getElementById("bloc_notes");
+const ul = document.getElementById("bloc1_ul");
+const modalInputName = document.getElementById("modalInputName");
+const modalInputTopic = document.getElementById("modalInputTopic");
+const buttonAddNote = document.getElementById("buttonAddNote");
+const container_number_notes = document.getElementById("container_number_notes");
+const charCount_1 = document.getElementById("charCount_1");
+const charCount_2 = document.getElementById("charCount_2");
 const staticBackdrop = new bootstrap.Modal(document.getElementById('staticBackdrop'));
+const container_textarea = document.getElementById("container_textarea");
+const textarea = document.getElementById("textarea");
+const searchInput = document.getElementById("searchInput");
 
+let currentSearchTerm = "";
 
 modalInputName.addEventListener("input", () => {
   const maxLength = modalInputName.getAttribute("maxlength");
@@ -30,8 +32,6 @@ modalInputTopic.addEventListener("input", () => {
   charCount_2.textContent = `Введено: ${currentLength} / ${maxLength}`;
 });
 
-container_number_notes.insertAdjacentHTML('beforeend', `<p id="number_notes" class="number_notes">Кількість нотатків (${ul.children.length})</p>`);
-
 function validateInputs() {
   if (modalInputName.value.trim() !== "" && modalInputTopic.value.trim() !== "") {
     buttonAddNote.removeAttribute("disabled");
@@ -40,60 +40,124 @@ function validateInputs() {
   }
 }
 
-// Проверяем ввод каждый раз, когда меняется текст
 modalInputName.addEventListener("input", validateInputs);
 modalInputTopic.addEventListener("input", validateInputs);
 
+function loadNotes() {
+  const notes = JSON.parse(localStorage.getItem("notes")) || [];
+  ul.innerHTML = "";
+
+  notes.forEach((note, index) => {
+    const li = document.createElement("li");
+    li.classList.add("note-item");
+
+    const noteDate = new Date(note.date).toLocaleString('ru-RU', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    li.innerHTML = `
+        <div class="note-title">${note.title}</div>
+        <div class="note-meta">
+          <span class="note-topic">${note.topic}</span>
+          <span class="note-date">${noteDate}</span>
+        </div>
+      `;
+
+    li.dataset.noteId = note.id;
+    ul.prepend(li);
+
+    if (index === 0) {
+      li.classList.add("active");
+      loadNoteContent(note.id);
+    }
+  });
+
+  updateNoteCount();
+}
+
+function updateNoteCount() {
+  let numberNotesElement = document.getElementById("number_notes");
+  if (numberNotesElement) {
+    numberNotesElement.textContent = `Кількість нотатків (${ul.children.length})`;
+  } else {
+    container_number_notes.insertAdjacentHTML('beforeend', `<p id="number_notes" class="number_notes">Кількість нотатків (${ul.children.length})</p>`);
+  }
+}
 
 buttonAddNote.addEventListener("click", () => {
   const now = new Date();
-  const hours = now.getHours();
-  const minutes = now.getMinutes();
-  const timeString = `${hours}:${minutes < 10 ? '0' + minutes : minutes}`;
+  const timeString = now.toISOString();
 
-  // Добавляем новую заметку в список
-  ul.insertAdjacentHTML('beforeend', `
-    <li>
-      ${modalInputName.value}
-      <p><span>${timeString}</span> ${modalInputTopic.value}</p>
-      <div class="remove">
-        <button type="button" class="btn" data-bs-toggle="tooltip" data-bs-placement="right" title="Видалити нотаток">
-          <img src="./img/icons8-крестик-78.png" alt="" />
-        </button>
-      </div>
-    </li>
-  `);
+  const newNote = {
+    id: Date.now(),
+    title: modalInputName.value.trim(),
+    topic: modalInputTopic.value.trim(),
+    text: "",
+    date: timeString
+  };
 
-  // Находим элемент для количества заметок
-  let numberNotesElement = document.getElementById("number_notes");
+  const notes = JSON.parse(localStorage.getItem("notes")) || [];
+  notes.push(newNote);
+  localStorage.setItem("notes", JSON.stringify(notes));
 
-  if (numberNotesElement) {
-    // Если элемент уже есть, просто обновляем его текст
-    numberNotesElement.textContent = `Кількість нотатків (${ul.children.length})`;
-  } else {
-    // Если элемента нет, создаем новый
-    container_number_notes.insertAdjacentHTML('beforeend', `
-      <p id="number_notes" class="number_notes">Кількість нотатків (${ul.children.length})</p>
-    `);
-
-  }
-
-  // **Переинициализация Bootstrap tooltip для новых элементов**
-  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-  tooltipTriggerList.forEach(tooltipTriggerEl => {
-    new bootstrap.Tooltip(tooltipTriggerEl);
-  });
   modalInputName.value = '';
   modalInputTopic.value = '';
   staticBackdrop.hide();
+  loadNotes();
 });
 
 ul.addEventListener("click", (event) => {
-  if (event.target.tagName === "LI") {
-    document.querySelectorAll(".activ").forEach(item => {
-      item.classList.remove("activ");
-    });
-    event.target.classList.add("activ");
+  const clickedElement = event.target.closest("li");
+
+  if (clickedElement) {
+    document.querySelectorAll(".note-item").forEach(li => li.classList.remove("active"));
+
+    clickedElement.classList.add("active");
+
+    const noteId = clickedElement.dataset.noteId;
+    loadNoteContent(noteId);
   }
 });
 
+function loadNoteContent(noteId) {
+  const notes = JSON.parse(localStorage.getItem("notes")) || [];
+  const note = notes.find(n => n.id == noteId);
+  if (note) {
+    textarea.value = note.text;
+    textarea.dataset.noteId = note.id;
+  }
+}
+
+textarea.addEventListener("input", () => {
+  const noteId = textarea.dataset.noteId;
+  const notes = JSON.parse(localStorage.getItem("notes")) || [];
+  const note = notes.find(n => n.id == noteId);
+  if (note) {
+    note.text = textarea.value;
+    localStorage.setItem("notes", JSON.stringify(notes));
+  }
+});
+
+searchInput.addEventListener("input", function () {
+  const searchTerm = searchInput.value.toLowerCase();
+  currentSearchTerm = searchTerm;
+
+  const notes = JSON.parse(localStorage.getItem("notes")) || [];
+
+  notes.forEach(note => {
+    const noteItem = document.querySelector(`[data-note-id="${note.id}"]`);
+    const noteTitle = note.title.toLowerCase();
+    const noteText = note.text.toLowerCase();
+
+    if (noteTitle.includes(searchTerm) || noteText.includes(searchTerm)) {
+      const firstNote = ul.querySelector("li");
+      ul.insertBefore(noteItem, firstNote);
+    }
+  });
+});
+
+loadNotes();

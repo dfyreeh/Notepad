@@ -201,6 +201,11 @@ form input {
   position: relative;
 }
 
+.bloc1_ul li .note-link {
+  color: rgb(255, 255, 255);
+  display: flex;
+}
+
 .bloc1_ul li span {
   font-size: 13px;
   color: white;
@@ -214,7 +219,7 @@ form input {
   margin: 0;
 }
 
-.bloc1_ul .activ {
+.bloc1_ul .active {
   background-color: var(--color);
 }
 
@@ -265,6 +270,11 @@ form div {
   display: flex;
   align-items: flex-end;
   justify-content: space-between
+}
+
+#container_textarea {
+  height: 100%;
+  width: 100%;
 }
 
 form p {
